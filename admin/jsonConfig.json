@@ -7,9 +7,9 @@
 			"label": "device",
 			"newLine": true
 		},
-		"baudrate": {
+		"baudRate": {
 			"type": "text",
-			"label": "baudrate",
+			"label": "baudRate",
 			"newLine": false
 		}
 	}
