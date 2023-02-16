@@ -18,6 +18,8 @@ class PylontechSerial extends utils.Adapter {
 	/**
 	 * @param {Partial<utils.AdapterOptions>} [options={}]
 	 */
+
+
 	constructor(options) {
 		super({
 			...options,
@@ -29,6 +31,8 @@ class PylontechSerial extends utils.Adapter {
 		// this.on("message", this.onMessage.bind(this));
 		this.on("unload", this.onUnload.bind(this));
 		gthis = this;
+		this.port;
+		this.rawData;
 	}
 
 	/**
@@ -39,31 +43,29 @@ class PylontechSerial extends utils.Adapter {
 	async onReady() {
 		// Initialize your adapter here
 		const parser = new ReadlineParser();
-		const port = new SerialPort({ path: "/dev/ttyS0", baudRate: 115200,  autoOpen: false });
+		this.port = new SerialPort({ path: "/dev/ttyS0", baudRate: 115200,  autoOpen: false });
 		// The adapters config (in the instance object everything under the attribute "native") is accessible via
 		// this.config:
 		this.log.info("config Serial-Device: " + this.config.device);
 		this.log.info("config BaudRate: " + this.config.baudRate);
 
-		port.on("error", function(err) {
+		this.port.on("error", function(err) {
 			gthis.log.error("Error: " + err.message);
 		});
 
-		port.on("open", function() {
+		this.port.on("open", function() {
 			gthis.log.info(" Port Open ");
-			port.pipe(parser);
-			port.write("bat\n");
+			this.port.pipe(parser);
+			this.port.write("bat\n");
 		});
 		parser.on("data",  function (data) {
+			this.rawData = data;
 			gthis.log.debug("ParserData:" + data);
+
+
 		});
 
-
-		await port.open();
-		
-	
-
-
+		await this.port.open();
 
 		/*
 		For every state in the system there has to be also an object of type state
@@ -101,14 +103,14 @@ class PylontechSerial extends utils.Adapter {
 		await this.setStateAsync("testVariable", { val: true, ack: true });
 
 		// same thing, but the state is deleted after 30s (getState will return null afterwards)
-		await this.setStateAsync("testVariable", { val: true, ack: true, expire: 30 });
+		//await this.setStateAsync("testVariable", { val: true, ack: true, expire: 30 });
 
 		// examples for the checkPassword/checkGroup functions
-		let result = await this.checkPasswordAsync("admin", "iobroker");
-		this.log.info("check user admin pw iobroker: " + result);
+		//let result = await this.checkPasswordAsync("admin", "iobroker");
+		//this.log.info("check user admin pw iobroker: " + result);
 
-		result = await this.checkGroupAsync("admin", "admin");
-		this.log.info("check group user admin group admin: " + result);
+		//result = await this.checkGroupAsync("admin", "admin");
+		//this.log.info("check group user admin group admin: " + result);
 	}
 
 	/**
@@ -118,12 +120,7 @@ class PylontechSerial extends utils.Adapter {
 	onUnload(callback) {
 		try {
 			this.log.info("cleaned everything up...");
-			port.close();
-			// Here you must clear all timeouts or intervals that may still be active
-			// clearTimeout(timeout1);
-			// clearTimeout(timeout2);
-			// ...
-			// clearInterval(interval1);
+			this.port.close();
 
 			callback();
 		} catch (e) {
