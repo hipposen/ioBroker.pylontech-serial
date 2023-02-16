@@ -39,26 +39,29 @@ class PylontechSerial extends utils.Adapter {
 	async onReady() {
 		// Initialize your adapter here
 		const parser = new ReadlineParser();
-		const port = new SerialPort({path: "/dev/ttyS0",baudRate: 115200});
+		const port = new SerialPort({ path: "/dev/ttyS0", baudRate: 115200,  autoOpen: false });
 		// The adapters config (in the instance object everything under the attribute "native") is accessible via
 		// this.config:
 		this.log.info("config Serial-Device: " + this.config.device);
 		this.log.info("config BaudRate: " + this.config.baudRate);
 
 		port.on("error", function(err) {
-			gthis.log.error("Error: ", err.message);
+			gthis.log.error("Error: " + err.message);
 		});
+
 		port.on("open", function() {
-			gthis.log.debug(" Port Open ");
+			gthis.log.info(" Port Open ");
 			port.pipe(parser);
 			port.write("bat\n");
 		});
-
-
 		parser.on("data",  function (data) {
-			gthis.log.debug("Data:", data);
+			gthis.log.debug("ParserData:" + data);
 		});
+
+
 		await port.open();
+		
+	
 
 
 
@@ -115,7 +118,7 @@ class PylontechSerial extends utils.Adapter {
 	onUnload(callback) {
 		try {
 			this.log.info("cleaned everything up...");
-			gthis.port.close();
+			port.close();
 			// Here you must clear all timeouts or intervals that may still be active
 			// clearTimeout(timeout1);
 			// clearTimeout(timeout2);
