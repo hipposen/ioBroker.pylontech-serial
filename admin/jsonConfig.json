@@ -2,15 +2,15 @@
 	"i18n": true,
 	"type": "panel",
 	"items": {
-		"option1": {
-			"type": "checkbox",
-			"label": "option1",
+		"device": {
+			"type": "text",
+			"label": "device",
 			"newLine": true
 		},
-		"option2": {
+		"baudrate": {
 			"type": "text",
-			"label": "option2",
-			"newLine": true
+			"label": "baudrate",
+			"newLine": false
 		}
 	}
 }
