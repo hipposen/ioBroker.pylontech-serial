@@ -11,6 +11,7 @@ const { SerialPort,ReadlineParser  } = require("serialport");
 
 // Load your modules here, e.g.:
 // const fs = require("fs");
+let gthis;
 
 class PylontechSerial extends utils.Adapter {
 
@@ -27,9 +28,7 @@ class PylontechSerial extends utils.Adapter {
 		// this.on("objectChange", this.onObjectChange.bind(this));
 		// this.on("message", this.onMessage.bind(this));
 		this.on("unload", this.onUnload.bind(this));
-
-		
-		
+		gthis = this;
 	}
 
 	/**
@@ -49,23 +48,19 @@ class PylontechSerial extends utils.Adapter {
 		this.log.info("config BaudRate: " + this.config.baudRate);
 
 		port.on("error", function(err) {
-			this.log.error("Error: ", err.message);
+			gthis.log.error("Error: ", err.message);
 		});
 		port.on("open", function() {
-			this.log.debug(" Port Open ");
+			gthis.log.debug(" Port Open ");
 			port.pipe(parser);
 		});
 
 
 		parser.on("data",  function (data) {
-			this.log.error("Data:", data);
+			gthis.log.error("Data:", data);
 		});
 		await port.open();
 		port.write("bat\n");
-
-
-
-
 
 
 
