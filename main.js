@@ -12,6 +12,8 @@ const { SerialPort,ReadlineParser  } = require("serialport");
 // Load your modules here, e.g.:
 // const fs = require("fs");
 let gthis;
+let port;
+let rawData;
 
 class PylontechSerial extends utils.Adapter {
 
@@ -31,8 +33,6 @@ class PylontechSerial extends utils.Adapter {
 		// this.on("message", this.onMessage.bind(this));
 		this.on("unload", this.onUnload.bind(this));
 		gthis = this;
-		this.port;
-		this.rawData;
 	}
 
 	/**
@@ -43,29 +43,29 @@ class PylontechSerial extends utils.Adapter {
 	async onReady() {
 		// Initialize your adapter here
 		const parser = new ReadlineParser();
-		this.port = new SerialPort({ path: "/dev/ttyS0", baudRate: 115200,  autoOpen: false });
+		port = new SerialPort({path: "/dev/ttyS0", baudRate: 115200,  autoOpen: false });
 		// The adapters config (in the instance object everything under the attribute "native") is accessible via
 		// this.config:
 		this.log.info("config Serial-Device: " + this.config.device);
 		this.log.info("config BaudRate: " + this.config.baudRate);
 
-		this.port.on("error", function(err) {
+		port.on("error", function(err) {
 			gthis.log.error("Error: " + err.message);
 		});
 
-		this.port.on("open", function() {
+		port.on("open", function() {
 			gthis.log.info(" Port Open ");
-			this.port.pipe(parser);
-			this.port.write("bat\n");
+			port.pipe(parser);
+			port.write("bat\n");
 		});
 		parser.on("data",  function (data) {
-			this.rawData = data;
+			rawData = data;
 			gthis.log.debug("ParserData:" + data);
 
 
 		});
 
-		await this.port.open();
+		await port.open();
 
 		/*
 		For every state in the system there has to be also an object of type state
@@ -120,7 +120,7 @@ class PylontechSerial extends utils.Adapter {
 	onUnload(callback) {
 		try {
 			this.log.info("cleaned everything up...");
-			this.port.close();
+			port.close();
 
 			callback();
 		} catch (e) {
