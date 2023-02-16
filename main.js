@@ -7,6 +7,7 @@
 // The adapter-core module gives you access to the core ioBroker functions
 // you need to create an adapter
 const utils = require("@iobroker/adapter-core");
+const { SerialPort,ReadlineParser  } = require('serialport')
 
 // Load your modules here, e.g.:
 // const fs = require("fs");
@@ -26,6 +27,7 @@ class PylontechSerial extends utils.Adapter {
 		// this.on("objectChange", this.onObjectChange.bind(this));
 		// this.on("message", this.onMessage.bind(this));
 		this.on("unload", this.onUnload.bind(this));
+
 	}
 
 	/**
@@ -33,12 +35,18 @@ class PylontechSerial extends utils.Adapter {
 	 */
 	async onReady() {
 		// Initialize your adapter here
-
+		
 		// The adapters config (in the instance object everything under the attribute "native") is accessible via
 		// this.config:
 		this.log.info("config Serial-Device: " + this.config.device);
 		this.log.info("config BaudRate: " + this.config.baudRate);
 
+		const serialport = new SerialPort({ path: this.config.device, baudRate: this.config.baudRate })
+		const parser = new ReadlineParser()
+		serialport.pipe(parser)
+		parser.on('data', console.log)
+		serialport.write('bat\n')
+		
 		/*
 		For every state in the system there has to be also an object of type state
 		Here a simple template for a boolean variable named "testVariable"
@@ -91,6 +99,7 @@ class PylontechSerial extends utils.Adapter {
 	 */
 	onUnload(callback) {
 		try {
+			serialport.close()
 			// Here you must clear all timeouts or intervals that may still be active
 			// clearTimeout(timeout1);
 			// clearTimeout(timeout2);
