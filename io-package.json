@@ -1,0 +1,86 @@
+{
+	"common": {
+		"name": "pylontech-serial",
+		"version": "0.0.1",
+		"news": {
+			"0.0.1": {
+				"en": "initial release",
+				"de": "Erstveröffentlichung",
+				"ru": "Начальная версия",
+				"pt": "lançamento inicial",
+				"nl": "Eerste uitgave",
+				"fr": "Première version",
+				"it": "Versione iniziale",
+				"es": "Versión inicial",
+				"pl": "Pierwsze wydanie",
+				"zh-cn": "首次出版"
+			}
+		},
+		"title": "Pylontech-serial",
+		"titleLang": {
+			"en": "Pylontech-serial",
+			"de": "Pylontech-Serie",
+			"ru": "Pylontech-сериал",
+			"pt": "Pylontech-serial",
+			"nl": "Pylontech-serieel",
+			"fr": "Série Pylontech",
+			"it": "Seriale Pylontech",
+			"es": "Pylontech-serie",
+			"pl": "Pylontech-serial",
+			"zh-cn": "Pylontech系列"
+		},
+		"desc": {
+			"en": "Adapter to read pylontech batteries",
+			"de": "Adapter zum Auslesen von Pylontech-Batterien",
+			"ru": "Адаптер для чтения аккумуляторов pylontech",
+			"pt": "Adaptador para leitura de baterias pylontech",
+			"nl": "Adapter om pylontech batterijen te lezen",
+			"fr": "Adaptateur pour lire les batteries pylontech",
+			"it": "Adattatore per leggere batterie pylontech",
+			"es": "Adaptador para leer baterías pylontech",
+			"pl": "Adapter do odczytu akumulatorów pylontech",
+			"zh-cn": "读取 pylontech 电池的适配器"
+		},
+		"authors": [
+			"hipposen <hipposen@gmx.de>"
+		],
+		"keywords": [
+			"ioBroker",
+			"template",
+			"Smart Home",
+			"home automation"
+		],
+		"license": "MIT",
+		"platform": "Javascript/Node.js",
+		"main": "main.js",
+		"icon": "pylontech-serial.png",
+		"enabled": true,
+		"extIcon": "https://raw.githubusercontent.com/hipposen/ioBroker.pylontech-serial/main/admin/pylontech-serial.png",
+		"readme": "https://github.com/hipposen/ioBroker.pylontech-serial/blob/main/README.md",
+		"loglevel": "info",
+		"mode": "daemon",
+		"type": "energy",
+		"compact": true,
+		"connectionType": "local",
+		"dataSource": "poll",
+		"adminUI": {
+			"config": "json"
+		},
+		"dependencies": [
+			{
+				"js-controller": ">=3.3.22"
+			}
+		],
+		"globalDependencies": [
+			{
+				"admin": ">=5.1.13"
+			}
+		]
+	},
+	"native": {
+		"option1": true,
+		"option2": "42"
+	},
+	"objects": [],
+	"instanceObjects": []
+}
