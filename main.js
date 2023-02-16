@@ -36,8 +36,6 @@ class PylontechSerial extends utils.Adapter {
 	 */
 
 
-	
-
 	async onReady() {
 		// Initialize your adapter here
 		const parser = new ReadlineParser();
@@ -53,14 +51,14 @@ class PylontechSerial extends utils.Adapter {
 		port.on("open", function() {
 			gthis.log.debug(" Port Open ");
 			port.pipe(parser);
+			port.write("bat\n");
 		});
 
 
 		parser.on("data",  function (data) {
-			gthis.log.error("Data:", data);
+			gthis.log.debug("Data:", data);
 		});
 		await port.open();
-		port.write("bat\n");
 
 
 
@@ -116,7 +114,8 @@ class PylontechSerial extends utils.Adapter {
 	 */
 	onUnload(callback) {
 		try {
-			serialport.close();
+			this.log.info("cleaned everything up...");
+			gthis.port.close();
 			// Here you must clear all timeouts or intervals that may still be active
 			// clearTimeout(timeout1);
 			// clearTimeout(timeout2);
