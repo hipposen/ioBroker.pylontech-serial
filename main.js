@@ -59,8 +59,31 @@ class PylontechSerial extends utils.Adapter {
 			port.write("bat\n");
 		});
 		parser.on("data",  function (data) {
-			rawData = data;
-			gthis.log.debug("ParserData:" + data);
+			data = data.trim();
+			const parts = data.split(" ");
+
+			if ( parts[0].toString() === "bat" ){
+				return ;
+			}
+
+			if ( parts[0].toString() === "@" ){
+				return ;
+			}
+
+			if ( parts[0].toString() === "$$" ){
+				return ;
+			}
+
+			if ( parts[0].toString() === "Command" ){
+				return ;
+			}
+
+			if ( parts[0].toString() === "Battery" ){
+				return ;
+			}
+			//              const [nr, volt, amp, temp,Mode,Stat1,Stat2,Stat3,SOC,Power,,BAL] = data
+			let test = data.replace(/\s+/g, " ").trim().split(" ");
+			gthis.log.info(test);
 
 
 		});
