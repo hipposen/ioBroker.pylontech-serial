@@ -7,13 +7,15 @@
 // The adapter-core module gives you access to the core ioBroker functions
 // you need to create an adapter
 const utils = require("@iobroker/adapter-core");
+//const { parsers } = require("serialport");
 const { SerialPort,ReadlineParser  } = require("serialport");
 
 // Load your modules here, e.g.:
 // const fs = require("fs");
 let gthis;
 let port;
-let rawData;
+
+let pylonData = new Array();
 
 class PylontechSerial extends utils.Adapter {
 
@@ -33,31 +35,73 @@ class PylontechSerial extends utils.Adapter {
 		// this.on("message", this.onMessage.bind(this));
 		this.on("unload", this.onUnload.bind(this));
 		gthis = this;
+		let rawData;
+		let myTimer;
+		
 	}
 
 	/**
 	 * Is called when databases are connected and adapter received configuration.
 	 */
-
+		 stringToBoolean = (stringValue) => {
+		switch(stringValue?.toLowerCase()?.trim()){
+			case "true": 
+			case "yes": 
+			case "1": 
+			case "y": 
+			  return true;
+	
+			case "false": 
+			case "no": 
+			case "n": 
+			case "0": 
+			case null: 
+			case undefined:
+			  return false;
+	
+			default: 
+			  return JSON.parse(stringValue);
+		}
+	}
 
 	async onReady() {
 		// Initialize your adapter here
 		const parser = new ReadlineParser();
-		port = new SerialPort({path: "/dev/ttyS0", baudRate: 115200,  autoOpen: false });
+		port = new SerialPort({path: this.config.device, baudRate: this.config.baudRate,  autoOpen: false });
+		port.pipe(parser);
 		// The adapters config (in the instance object everything under the attribute "native") is accessible via
 		// this.config:
 		this.log.info("config Serial-Device: " + this.config.device);
 		this.log.info("config BaudRate: " + this.config.baudRate);
+		await this.setObjectNotExistsAsync("Master", {
+			type: 'device',
+			common: {
+				name: "first battery",
+				}
+			});
+		port.on("open", function() {
+			gthis.log.info(" Port Open ");			
+			port.write("bat\n");
+			
+		});
 
 		port.on("error", function(err) {
-			gthis.log.error("Error: " + err.message);
+			gthis.log.error(" Port Error: " + err.message);
 		});
 
-		port.on("open", function() {
-			gthis.log.info(" Port Open ");
-			port.pipe(parser);
-			port.write("bat\n");
+		port.on("close", function() {
+			gthis.log.info(" Port Close ");						
 		});
+
+		port.on("data", function(data) {
+			//gthis.log.info(" Port Data " + data.toString());						
+		});
+
+		port.on("drain", function() {
+			gthis.log.info(" Port Drain ");						
+		});
+
+
 		parser.on("data",  function (data) {
 			data = data.trim();
 			const parts = data.split(" ");
@@ -81,20 +125,239 @@ class PylontechSerial extends utils.Adapter {
 			if ( parts[0].toString() === "Battery" ){
 				return ;
 			}
-			//              const [nr, volt, amp, temp,Mode,Stat1,Stat2,Stat3,SOC,Power,,BAL] = data
-			let test = data.replace(/\s+/g, " ").trim().split(" ");
-			gthis.log.info(test);
+
+			if ( parts[0].toString() === "pylon>bat" ){
+				return ;
+			}
+			//const [nr, volt, amp, temp,Mode,Stat1,Stat2,Stat3,SOC,Power,,BAL] = data
+			let rawData = data.replace(/\s+/g, " ").trim().split(" ");
+			 
+
+			 gthis.setObjectNotExists("Master."+rawData[0].padStart(2, '0'), {
+				type: 'channel',
+				common: {
+					name: "Cell number",
+					"read": true,
+					"type": "number"
+					}
+				});
+				
+			gthis.setObjectNotExists("Master."+rawData[0].padStart(2, '0')+".volt", {
+				type: 'state',
+				common: {
+					name: "Spannung",
+					"read": true,
+					"type": "number",
+					"unit": "V",
+					"custom": {
+						"influxdb.0": {
+						  "enabled": true,
+						  "storageType": "",
+						  "aliasId": "",
+						  "debounceTime": 0,
+						  "blockTime": 0,
+						  "changesOnly": false,
+						  "changesRelogInterval": 0,
+						  "changesMinDelta": 0,
+						  "ignoreBelowNumber": "",
+						  "disableSkippedValueLogging": false,
+						  "enableDebugLogs": false,
+						  "debounce": 1000
+						}
+					  }
+					}
+				});
+			gthis.setStateAsync("Master."+rawData[0].padStart(2, '0')+".volt", {val: parseFloat(rawData[1]/1000), ack: true});
+			
+			gthis.setObjectNotExists("Master."+rawData[0].padStart(2, '0')+".amp", {
+				type: 'state',
+					common: {
+						name: "Stromstärke",
+						"read": true,
+						"type": "number",
+						"unit": "A",
+						"custom": {
+							"influxdb.0": {
+							  "enabled": true,
+							  "storageType": "",
+							  "aliasId": "",
+							  "debounceTime": 0,
+							  "blockTime": 0,
+							  "changesOnly": false,
+							  "changesRelogInterval": 0,
+							  "changesMinDelta": 0,
+							  "ignoreBelowNumber": "",
+							  "disableSkippedValueLogging": false,
+							  "enableDebugLogs": false,
+							  "debounce": 1000
+							}
+						  }
+					}
+				});
+			gthis.setStateAsync("Master."+rawData[0].padStart(2, '0')+".amp", {val: parseFloat(rawData[2]/1000), ack: true});
+
+			gthis.setObjectNotExists("Master."+rawData[0].padStart(2, '0')+".temp", {
+				type: 'state',
+					common: {
+							name: "Temperature",
+							"read": true,
+							"type": "number",
+							"unit": "C",
+							"custom": {
+								"influxdb.0": {
+								  "enabled": true,
+								  "storageType": "",
+								  "aliasId": "",
+								  "debounceTime": 0,
+								  "blockTime": 0,
+								  "changesOnly": false,
+								  "changesRelogInterval": 0,
+								  "changesMinDelta": 0,
+								  "ignoreBelowNumber": "",
+								  "disableSkippedValueLogging": false,
+								  "enableDebugLogs": false,
+								  "debounce": 1000
+								}
+							  }
+					}
+				});
+			gthis.setStateAsync("Master."+rawData[0].padStart(2, '0')+".temp", {val: parseFloat(rawData[3]/1000), ack: true});
+
+			gthis.setObjectNotExists("Master."+rawData[0].padStart(2, '0')+".mode", {
+				type: 'state',
+					common: {
+							name: "mode",
+							"read": true,
+							"type": "string","custom": {
+								"influxdb.0": {
+								  "enabled": true,
+								  "storageType": "",
+								  "aliasId": "",
+								  "debounceTime": 0,
+								  "blockTime": 0,
+								  "changesOnly": false,
+								  "changesRelogInterval": 0,
+								  "changesMinDelta": 0,
+								  "ignoreBelowNumber": "",
+								  "disableSkippedValueLogging": false,
+								  "enableDebugLogs": false,
+								  "debounce": 1000
+								}
+							  }
+					}
+				});
+			gthis.setStateAsync("Master."+rawData[0].padStart(2, '0')+".mode", {val: rawData[4], ack: true});
+			
+			gthis.setObjectNotExists("Master."+rawData[0].padStart(2, '0')+".soc", {
+				type: 'state',
+					common: {
+							name: "State of Charge",
+							"read": true,
+							"type": "number",
+							"unit": "%",
+							"custom": {
+								"influxdb.0": {
+								  "enabled": true,
+								  "storageType": "",
+								  "aliasId": "",
+								  "debounceTime": 0,
+								  "blockTime": 0,
+								  "changesOnly": false,
+								  "changesRelogInterval": 0,
+								  "changesMinDelta": 0,
+								  "ignoreBelowNumber": "",
+								  "disableSkippedValueLogging": false,
+								  "enableDebugLogs": false,
+								  "debounce": 1000
+								}
+							  }
+
+					}
+				});
+			gthis.setStateAsync("Master."+rawData[0].padStart(2, '0')+".soc", {val: parseInt(rawData[8]), ack: true});
+			
+			gthis.setObjectNotExists("Master."+rawData[0].padStart(2, '0')+".power", {
+				type: 'state',
+					common: {
+							name: "Power",
+							"read": true,
+							"type": "number",
+							"unit": "Ah",
+							"custom": {
+								"influxdb.0": {
+								  "enabled": true,
+								  "storageType": "",
+								  "aliasId": "",
+								  "debounceTime": 0,
+								  "blockTime": 0,
+								  "changesOnly": false,
+								  "changesRelogInterval": 0,
+								  "changesMinDelta": 0,
+								  "ignoreBelowNumber": "",
+								  "disableSkippedValueLogging": false,
+								  "enableDebugLogs": false,
+								  "debounce": 1000
+								}
+							  }
+					}
+				});
+			gthis.setStateAsync("Master."+rawData[0].padStart(2, '0')+".power", {val: parseFloat(rawData[9]/1000), ack: true});
+			
+			gthis.setObjectNotExists("Master."+rawData[0].padStart(2, '0')+".balance", {
+				type: 'state',
+					common: {
+							name: "Balance",
+							"read": true,
+							"type": "boolean",
+							"custom": {
+								"influxdb.0": {
+								  "enabled": true,
+								  "storageType": "",
+								  "aliasId": "",
+								  "debounceTime": 0,
+								  "blockTime": 0,
+								  "changesOnly": false,
+								  "changesRelogInterval": 0,
+								  "changesMinDelta": 0,
+								  "ignoreBelowNumber": "",
+								  "disableSkippedValueLogging": false,
+								  "enableDebugLogs": false,
+								  "debounce": 1000
+								}
+							  }
+					}
+				});
+			gthis.setStateAsync("Master."+rawData[0].padStart(2, '0')+".balance", {val: gthis.stringToBoolean(rawData[11]), ack: true});
 
 
+			//gthis.log.info(data.length);
+			//gthis.log.info(data);
+	
+			//pylonData.push(rawData);
+			
 		});
 
-		await port.open();
+		gthis.Timer = setInterval(() => {
+			if(port.isOpen){
+				port.write("bat\n");
+			}
+			else{
+	
+				port.open();
 
+			}	
+		  }, 60000);
+		
+		
+		
+		//await this.getDatafromRaw()
+		
 		/*
 		For every state in the system there has to be also an object of type state
 		Here a simple template for a boolean variable named "testVariable"
 		Because every adapter instance uses its own unique namespace variable names can't collide with other adapters variables
 		*/
+/*
 		await this.setObjectNotExistsAsync("testVariable", {
 			type: "state",
 			common: {
@@ -106,9 +369,9 @@ class PylontechSerial extends utils.Adapter {
 			},
 			native: {},
 		});
-
+*/
 		// In order to get state updates, you need to subscribe to them. The following line adds a subscription for our variable we have created above.
-		this.subscribeStates("testVariable");
+		//this.subscribeStates("testVariable");
 		// You can also add a subscription for multiple states. The following line watches all states starting with "lights."
 		// this.subscribeStates("lights.*");
 		// Or, if you really must, you can also watch all states. Don't do this if you don't need to. Otherwise this will cause a lot of unnecessary load on the system:
@@ -119,11 +382,11 @@ class PylontechSerial extends utils.Adapter {
 			you will notice that each setState will cause the stateChange event to fire (because of above subscribeStates cmd)
 		*/
 		// the variable testVariable is set to true as command (ack=false)
-		await this.setStateAsync("testVariable", true);
+		//await this.setStateAsync("testVariable", true);
 
 		// same thing, but the value is flagged "ack"
 		// ack should be always set to true if the value is received from or acknowledged from the target system
-		await this.setStateAsync("testVariable", { val: true, ack: true });
+		//await this.setStateAsync("testVariable", { val: true, ack: true });
 
 		// same thing, but the state is deleted after 30s (getState will return null afterwards)
 		//await this.setStateAsync("testVariable", { val: true, ack: true, expire: 30 });
@@ -144,7 +407,7 @@ class PylontechSerial extends utils.Adapter {
 		try {
 			this.log.info("cleaned everything up...");
 			port.close();
-
+			clearInterval(gthis.Timer);
 			callback();
 		} catch (e) {
 			callback();
