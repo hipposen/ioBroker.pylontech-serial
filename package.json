@@ -24,7 +24,7 @@
   "dependencies": {
     "@iobroker/adapter-core": "^2.6.7",
     "@types/html-to-text": "^9.0.0",
-    "html-to-text": "^9.0.4",
+    "html-to-text": "^9.0.5",
     "serialport": "^10.5.0"
   },
   "devDependencies": {
